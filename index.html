@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEFTIES | FORMACIÓN RESPONSABLES</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton:wght@400;700&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ================= CONFIGURACIÓN VISUAL ================= */
+        :root {
+            --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+            --bg-color: #080808;
+            --text-color: #ffffff;
+            --border-color: rgba(255,255,255,0.15);
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        h1, h2, h3, .font-display {
+            font-family: 'Anton', sans-serif;
+            text-transform: uppercase;
+            /* Se aumenta el tracking para dar más aire */
+            letter-spacing: 0.1em; 
+        }
+        
+        /* Aumento el interlineado del H1 en la página de bienvenida para separarlo */
+        h1 {
+            line-height: 1.1; 
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        .grid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        /* ================= TRANSICIONES ================= */
+        .slide-container {
+            position: absolute; inset: 0; opacity: 0; pointer-events: none;
+            transform: scale(1.05);
+            transition: opacity 0.6s ease, transform 0.8s var(--ease-cinematic);
+            z-index: 0; display: flex; flex-direction: column;
+            background-color: var(--bg-color);
+        }
+        .active-slide { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
+
+        .reveal-container { overflow: visible; display: block; }
+        .reveal-text {
+            display: block; opacity: 0; filter: blur(10px); transform: translateY(15px);
+            transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s var(--ease-cinematic);
+        }
+        .active-slide .reveal-text { opacity: 1; filter: blur(0); transform: translateY(0); }
+        
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+        .delay-4 { transition-delay: 0.4s; }
+
+        /* ================= COMPONENTES ================= */
+        .task-btn {
+            background: rgba(255,255,255,0.03);
+            border-left: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+        .task-btn:hover {
+            background: white;
+            color: black;
+            border-left: 4px solid white;
+            padding-left: 1.5rem;
+        }
+        .task-btn:hover .icon-arrow { opacity: 1; transform: translateX(0); }
+        .icon-arrow { opacity: 0; transform: translateX(-10px); transition: all 0.3s ease; }
+
+        .data-table {
+            width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 2rem;
+        }
+        .data-table th {
+            background: #222; color: #fff; text-align: left; padding: 10px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #fff;
+        }
+        .data-table td {
+            padding: 10px; border-bottom: 1px solid #333; color: #ccc;
+        }
+        .data-table tr:hover td { background: #1a1a1a; color: white; }
+
+        .floating-icon { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+
+        .marquee-container {
+            position: absolute; white-space: nowrap; overflow: hidden; opacity: 0.03;
+            font-family: 'Anton', sans-serif; font-size: 15vw; line-height: 0.8;
+            pointer-events: none; user-select: none; z-index: 0;
+        }
+        .marquee-content { display: inline-block; animation: scroll 60s linear infinite; }
+        @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        .menu-item { border-bottom: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; }
+        .menu-item:hover { border-bottom: 1px solid #fff; padding-left: 20px; background: rgba(255,255,255,0.05); }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-overlay"></div>
+    <main id="app-container" class="relative w-full h-full"></main>
+
+    <script>
+        /* ==========================================================================
+        DATOS (JSON)
+        ==========================================================================
+        */
+        const appConfig = {
+            appName: "LEFTIES",
+            slides: [
+                // --- SPLASH ---
+                {
+                    id: "splash",
+                    type: "splash",
+                    marquee: "TRAINING • FORMACIÓN • RETAIL • MANAGEMENT •",
+                    titleLines: ["LEFTIES", "FORMACIÓN", "RESPONSABLES"],
+                    subtitle: "",
+                    icon: "fas fa-infinity",
+                    action: { label: "BIENVENIDOS", target: "menu-semanal" }
+                },
+
+                // --- MENU ---
+                {
+                    id: "menu-semanal",
+                    type: "menu",
+                    title: "PLANIFICACIÓN SEMANAL",
+                    options: [
+                        { id: "mon", label: "LUNES", sub: "Producto & Apps", icon: "fas fa-box-open", target: "slide-lunes" },
+                        { id: "tue", label: "MARTES", sub: "Merchandising", icon: "fas fa-layer-group", target: "slide-martes" },
+                        { id: "wed", label: "MIÉRCOLES", sub: "One Store & Análisis", icon: "fas fa-chart-pie", target: "slide-miercoles" },
+                        { id: "thu", label: "JUEVES", sub: "Formación Cajas", icon: "fas fa-cash-register", target: "slide-jueves" },
+                        { id: "fri", label: "VIERNES", sub: "Ejercicio Práctico", icon: "fas fa-clipboard-check", target: "slide-viernes" }
+                    ],
+                    backAction: { label: "Salir", target: "splash" }
+                },
+
+                // --- LUNES (PRODUCTO) ---
+                {
+                    id: "slide-lunes",
+                    type: "content",
+                    day: "01 / LUNES",
+                    title: "GESTIÓN INTEGRAL",
+                    icon: "fas fa-box-open",
+                    sections: [
+                        {
+                            category: "PRODUCTO",
+                            items: [
+                                { label: "Identificar producto de sección", target: "slide-tablas-producto", special: true },
+                                { label: "Diferencia entre fantasía y esenciales" },
+                                { label: "Panorama de la tienda: nuevas implantaciones" }
+                            ]
+                        },
+                        {
+                            category: "APLICACIONES",
+                            items: [
+                                { label: "Merchan" },
+                                { label: "Money Mapping" },
+                                // ENLACE A LA NUEVA APP .25
+                                { label: ".25", target: "slide-25-intro", special: true },
+                                { label: "Hoja de Gestión" },
+                                // ENLACE A DOOR CONTROL
+                                { label: "Door Control", target: "slide-door-control-ticket-scan", special: true },
+                                { label: "Power BI (Informes barridos)" },
+                                // ENLACE A CM MERMA
+                                { label: "CM merma", target: "slide-cm-merma-overview", special: true },
+                                { label: "Teams" }
+                            ]
+                        }
+                    ],
+                    back: "menu-semanal"
+                },
+
+                // === SUB-FLUJO: APP .25 (DESDE EL PDF) ===
+                
+                // 1. INTRODUCCIÓN .25
+                {
+                    id: "slide-25-intro",
+                    type: "content",
+                    day: "APP .25 / INTRO",
+                    title: "REPOSICIÓN",
+                    icon: "fas fa-mobile-alt",
+                    sections: [
+                        {
+                            category: "CONCEPTO GENERAL",
+                            items: [
+                                { label: "Uso del iPod para reposición diaria (Sustituye papel)" },
+                                { label: "Selección de Sección y Tipo de Informe" },
+                                { label: "Opción: 'Ver Últimos Informes' (Solo lectura)" }
+                            ]
+                        }
+                    ],
+                    next: { label: "Siguiente: Informes", target: "slide-25-informes" },
+                    back: "slide-lunes"
+                },
+
+                // 2. TIPOS DE INFORMES
+                {
+                    id: "slide-25-informes",
+                    type: "content",
+                    day: "APP .25 / INFORMES",
+                    title: "TIPOS DE INFORME",
+                    icon: "fas fa-file-invoice",
+                    sections: [
+                        {
+                            category: "1. INFORME REPOSICIÓN",
+                            items: [
+                                { label: "Seleccionar Campaña y Orden" },
+                                { label: "Automático: Muestra artículos/tallas a reponer" },
+                                { label: "Por Almacén: Muestra almacenes configurados en TGT" }
+                            ]
+                        },
+                        {
+                            category: "2. INFORME CAMIÓN",
+                            items: [
+                                { label: "Seleccionar Albarán y Grupos (W-Confección, TRF...)" },
+                                { label: "Picking: Marcar unidades en el iPod" },
+                                { label: "Completar: Al reponer todas las tallas" }
+                            ]
+                        }
+                    ],
+                    next: { label: "Siguiente: Filtros", target: "slide-25-filters" },
+                    back: "slide-25-intro"
+                },
+
+                // 3. MONEY MAPPING & FILTROS
+                {
+                    id: "slide-25-filters",
+                    type: "content",
+                    day: "APP .25 / FILTROS",
+                    title: "MONEY MAPPING",
+                    icon: "fas fa-map-marked-alt",
+                    sections: [
+                        {
+                            category: "PRIORIZACIÓN POR ZONAS",
+                            items: [
+                                { label: "Deslizar cabecera para activar filtro Money Mapping" },
+                                { label: "Seleccionar una o varias ubicaciones" },
+                                { label: "Visualización de muebles donde está el artículo" },
+                                { label: "Acceso a ITX STOCK desde el detalle" }
+                            ]
+                        }
+                    ],
+                    next: { label: "Siguiente: Cierre", target: "slide-25-final" },
+                    back: "slide-25-informes"
+                },
+
+                // 4. CIERRE Y VALIDACIÓN
+                {
+                    id: "slide-25-final",
+                    type: "content",
+                    day: "APP .25 / CIERRE",
+                    title: "FINALIZACIÓN",
+                    icon: "fas fa-user-check",
+                    sections: [
+                        {
+                            category: "PROCESO OBLIGATORIO",
+                            items: [
+                                { label: "Teclear código de empleado al finalizar" },
+                                { label: "Grabar 'Movimiento a Tienda' en la PDA" },
+                                { label: "Confirmar reposición completada" }
+                            ]
+                        }
+                    ],
+                    next: { label: "Volver a Lunes", target: "slide-lunes" },
+                    back: "slide-25-filters"
+                },
+
+                // === FIN SUB-FLUJO .25 ===
+
+                // === SUB-FLUJO: DOOR CONTROL (DESDE PDF) ===
+
+                {
+                    id: "slide-door-control-ticket-scan",
+                    type: "content",
+                    day: "APP DOOR CONTROL",
+                    title: "ESCANEO DE TICKET",
+                    icon: "fas fa-ticket-alt",
+                    sections: [
+                        {
+                            category: "FUNCIÓN PRINCIPAL",
+                            items: [
+                                { label: "Al sonar la alarma, la app Door Control permite escanear el ticket para verificar la incidencia." },
+                                { label: "Pulsa 'Escanear ticket' para comprobar la incidencia." },
+                                { label: "Permite revisar el histórico y volver a escanear tickets posteriormente." }
+                            ]
+                        },
+                        {
+                            category: "GESTIÓN DE INCIDENCIAS",
+                            items: [
+                                { label: "La parte superior muestra los artículos con incidencia pendiente." },
+                                { label: "La parte inferior muestra los artículos con la incidencia solucionada automáticamente." },
+                                { label: "Se considera solucionada si el ticket tiene una venta manual del mismo MCCT, enlazando el número de serie." },
+                                { label: "Las incidencias pendientes deben revisarse con el responsable (ej. artículo no vendido en caja asistida o cliente lleva otro igual)." },
+                                { label: "Si no hay ticket, verificar que la incidencia no esté pendiente en la pantalla de la caja asistida." }
+                            ]
+                        }
+                    ],
+                    next: { label: "Volver a Lunes", target: "slide-lunes" },
+                    back: "slide-lunes"
+                },
+
+                // === FIN SUB-FLUJO DOOR CONTROL ===
+
+                // === SUB-FLUJO: CM MERMA (DESDE PPTX) ===
+
+                {
+                    id: "slide-cm-merma-overview",
+                    type: "content",
+                    day: "APP CM MERMA",
+                    title: "INDICADORES DE MERMA",
+                    icon: "fas fa-chart-bar",
+                    sections: [
+                        {
+                            category: "EVIDENCIAS - POR ZONA",
+                            items: [
+                                { label: "Muestra la entrada de unidades por Pedestales/Probadores/Alarmas." },
+                                { label: "El gráfico detalla unidades por hora, semana y día, con opciones de drill-up y drill-down." },
+                                { label: "Nota: No se muestra información de 'Uds por hora' al seleccionar 'ALARMAS'." }
+                            ]
+                        },
+                        {
+                            category: "PROCESOS - INDICADORES CLAVE",
+                            items: [
+                                { label: "ENTRANCE (7/30 días): Muestra la performance en la entrada, unidades de los pedestales (Uds. faltantes con última ubicación Pedestales) y el tráfico." },
+                                { label: "POS (7/30 días): Incluye incidentes de ventas, devoluciones, reembolsos e incidentes manuales (Ej. tecleo manual en caja)." },
+                                { label: "FITTING ROOM (7/30 días): Uso de la App Fitting, conexiones, Merma Uniforme y % de Weight Merma (peso de merma de probadores)." },
+                                { label: "OPERATIVE (Acumulado de la campaña): Mide Frescura y Cobertura, Corrección de Desvíos, y Unidades de discrepancia en el CD1/CD2." }
+                            ]
+                        },
+                        {
+                            category: "LECTURA DE DATOS",
+                            items: [
+                                { label: "Los dígitos en ROJO indican que el resultado no alcanza un objetivo fijo." },
+                                { label: "Una flecha ROJA indica una evolución negativa vs. período anterior (7 o 30 días)." },
+                                { label: "Una flecha VERDE indica una evolución positiva frente al período anterior (7 o 30 días)." }
+                            ]
+                        }
+                    ],
+                    next: { label: "Volver a Lunes", target: "slide-lunes" },
+                    back: "slide-lunes"
+                },
+
+                // === FIN SUB-FLUJO CM MERMA ===
+
+
+                // --- TABLAS DE PRODUCTO ---
+                {
+                    id: "slide-tablas-producto",
+                    type: "tables",
+                    title: "GUÍA DE TALLAS Y SECCIONES",
+                    subtitle: "Referencia cruzada de tallaje Mexicano/Europeo",
+                    back: "slide-lunes"
+                },
+
+                // --- MARTES ---
+                {
+                    id: "slide-martes",
+                    type: "content",
+                    day: "02 / MARTES",
+                    title: "MERCHANDISING",
+                    icon: "fas fa-shirt",
+                    sections: [
+                        {
+                            category: "MERCHANDISING",
+                            items: [
+                                { label: "Lectura, interpretación y adaptación de dossier" },
+                                { label: "Estilismos: maniquíes, pasarelas, cápsulas" },
+                                { label: "Cartelería, tamaños y básicos" },
+                                // ENLACE A MOBILIARIO
+                                { label: "Mobiliario: nombres, alineado", target: "slide-mobiliario-tipos", special: true },
+                                { label: "Deliveris y Tgt camión" },
+                                { label: "Planificación y ubicación de novedades" }
+                            ]
+                        }
+                    ],
+                    back: "menu-semanal"
+                },
+
+                // === SUB-FLUJO: MOBILIARIO (DESDE PDF) ===
+                {
+                    id: "slide-mobiliario-tipos",
+                    type: "content",
+                    day: "MERCHANDISING / MOBILIARIO",
+                    title: "TIPOS DE MUEBLE VERSÁTIL",
+                    icon: "fas fa-warehouse",
+                    sections: [
+                        {
+                            category: "MUELBE VERSÁTIL - SEÑORA Y CABALLERO (60 cm)",
+                            items: [
+                                { label: "Barra Plana Versátil 120 cm" },
+                                { label: "Barra Plana Cisne Versátil 120 cm" },
+                                { label: "Barra Cisne Lateral Versátil 60 cm" },
+                                { label: "Barra Cisne Cabeza Versátil" },
+                                { label: "Barra Plana Cabeza Versátil 80 cm" },
+                                { label: "Lateral Versátil $60\times20$ cm" },
+                                { label: "Frontal para Versátil 40 cm" },
+                                { label: "Frontal para Complementos/Calzado 30 cm" },
+                                { label: "Balda Versátil 60 cm" }
+                            ]
+                        },
+                        {
+                            category: "MUELBE VERSÁTIL - NIÑ@ (50 cm)",
+                            items: [
+                                { label: "Barra Plana Versátil 110 cm" },
+                                { label: "Barra Plana Cisne Versátil 110 cm" },
+                                { label: "Barra Cisne Lateral Versátil 50 cm" },
+                                { label: "Barra Plana Cabeza Versátil 80 cm" },
+                                { label: "Lateral Versátil $50\times20$ cm" },
+                                { label: "Frontal Blanco para Complementos/Calzado 30 cm" },
+                                { label: "Balda Versátil 60 cm" }
+                            ]
+                        },
+                        {
+                            category: "MUELBE VERSÁTIL - BABY (70 cm)",
+                            items: [
+                                { label: "Barra Plana Versátil 70 cm" },
+                                { label: "Barra Cisne Lateral Versátil 70 cm" },
+                                { label: "Barra Plana Cabeza Versátil 80 cm" },
+                                { label: "Frontal Versátil 40 cm" },
+                                { label: "Frontal para Complementos/Calzado 30 cm" }
+                            ]
+                        }
+                    ],
+                    next: { label: "Volver a Martes", target: "slide-martes" },
+                    back: "slide-martes"
+                },
+                // === FIN SUB-FLUJO MOBILIARIO ===
+
+                // --- MIÉRCOLES ---
+                {
+                    id: "slide-miercoles",
+                    type: "content",
+                    day: "03 / MIÉRCOLES",
+                    title: "ONE STORE",
+                    icon: "fas fa-chart-line",
+                    sections: [
+                        {
+                            category: "ANÁLISIS COMERCIAL A DETALLE",
+                            items: [
+                                // ENLACE A ONE STORE
+                                { label: "Novedades App ONE STORE", target: "slide-one-store-novedades", special: true },
+                                { label: "Ranking tienda y mercado" },
+                                { label: "Cobertura y éxito del producto" },
+                                { label: "Rentabilidad en metros cuadrados" },
+                                { label: "Gestión de Artículos recuperables" },
+                                { label: "Rentabilidad: prioridades mobiliario" },
+                                { label: "Implicación en almacén" },
+                                { label: "Drivers venta presencial" }
+                            ]
+                        }
+                    ],
+                    back: "menu-semanal"
+                },
+
+                // === SUB-FLUJO: ONE STORE (DESDE PDF) ===
+                {
+                    id: "slide-one-store-novedades",
+                    type: "content",
+                    day: "APP ONE STORE",
+                    title: "NOVEDADES DE LA APP",
+                    icon: "fas fa-mobile-alt",
+                    sections: [
+                        {
+                            category: "CAMBIOS GENERALES",
+                            items: [
+                                { label: "La antigua app 'Retail Store' cambia su nombre a **ONE STORE**." },
+                                { label: "Disponible por el momento solo en **iPod/iPhone**; iPads continúan con la app Retail." },
+                                { label: "Rediseño de la aplicación con novedades visuales." }
+                            ]
+                        },
+                        {
+                            category: "PESTAÑA 'COMERCIAL'",
+                            items: [
+                                { label: "Incluye el **Ranking de artículos** (antes acceso propio)." },
+                                { label: "Acceso a la **Gestión de Stock** (antes en 'menú más')." },
+                                { label: "Módulo de análisis del **Rendimiento de Exposición** (antes en 'menú más')." },
+                                { label: "Listado de artículos que forman la **Base de Venta**." }
+                            ]
+                        },
+                        {
+                            category: "PESTAÑA 'OPERACIONES'",
+                            items: [
+                                { label: "Se visualiza la **Ocupación del Almacén** con una imagen y contenido más editorial." },
+                                { label: "Se añaden indicadores de **Unidades de Ocupación** y **Capacidad** (además del %)." },
+                                { label: "Muestra información por sección/producto y tipo de almacén (paquetería y confección)." }
+                            ]
+                        },
+                         {
+                            category: "BUSCADOR Y DETALLE DE ARTÍCULO",
+                            items: [
+                                { label: "Nuevo módulo de **Buscador General** en la barra de pestañas." },
+                                { label: "Permite búsquedas por referencia (MC, MCC) o escaneando el código de barras." },
+                                { label: "En el detalle de artículo: Muestra los **colores** y la **exposición ideal por tallas**." },
+                                { label: "En el detalle de artículo: Muestra ventas acumuladas de la semana anterior (S-1) y tránsito CD1/CD2 a nivel talla." }
+                            ]
+                        }
+                    ],
+                    next: { label: "Volver a Miércoles", target: "slide-miercoles" },
+                    back: "slide-miercoles"
+                },
+
+                // === FIN SUB-FLUJO ONE STORE ===
+
+                // --- JUEVES ---
+                {
+                    id: "slide-jueves",
+                    type: "content",
+                    day: "04 / JUEVES",
+                    title: "CAJAS",
+                    icon: "fas fa-cash-register",
+                    sections: [
+                        {
+                            category: "FORMACIÓN CAJAS",
+                            items: [
+                                // ENLACE A NORMATIVA GENERAL
+                                { label: "Normativa General y Operativa en Caja", target: "slide-cajas-general", special: true },
+                                // ENLACE A APERTURA/CIERRE
+                                { label: "Apertura y Tratamiento del Efectivo", target: "slide-cajas-efectivo-apertura", special: true },
+                                { label: "Operativa de Cierre y Depósitos", target: "slide-cajas-cierre-depositos", special: true },
+                                { label: "Incidencias .07" },
+                                { label: "Pedidos en caja .19" },
+                                { label: "Sínt, recolección de Paquetes" },
+                                { label: "Conocimiento del directorio en tienda" }
+                            ]
+                        }
+                    ],
+                    back: "menu-semanal"
+                },
+
+                // === SUB-FLUJO: CAJAS (DESDE PPTX) ===
+                
+                // 1. NORMATIVA GENERAL
+                {
+                    id: "slide-cajas-general",
+                    type: "content",
+                    day: "CAJAS / NORMATIVA",
+                    title: "NORMATIVA DE SEGURIDAD EN CAJA",
+                    icon: "fas fa-lock",
+                    sections: [
+                        {
+                            category: "IDENTIFICACIÓN DEL EMPLEADO",
+                            items: [
+                                { label: "Solo pueden operar empleados autorizados con conocimiento de la normativa." },
+                                { label: "Todo empleado debe identificarse con su código y clave personal e intransferible." },
+                                { label: "Los POS deben permanecer **bloqueados** cuando no estén en uso, y al finalizar el turno." }
+                            ]
+                        },
+                        {
+                            category: "OPERATIVA NO PERMITIDA",
+                            items: [
+                                { label: "Acceso al área de caja a personal no autorizado." },
+                                { label: "Operar o autorizar operaciones usando la identidad de otro empleado." },
+                                { label: "Realizar devoluciones/cambios sin ticket original, fuera de plazo o múltiples." },
+                                { label: "Registrar operaciones sin prendas y/o clientes presentes." },
+                                { label: "Registrar operaciones personales (venta/devolución) y uso de descuento de empleado." },
+                                { label: "Salir con artículos sin previo pago por parte de empleados o clientes." }
+                            ]
+                        },
+                        {
+                            category: "TRATAMIENTO DE TICKETS",
+                            items: [
+                                { label: "Es obligatorio entregar o enviar tickets originales/facturas y tickets regalo." },
+                                { label: "Tickets extraviados u olvidados por clientes deben ser entregados al Director/Encargado para su destrucción inmediata." },
+                                { label: "Para operaciones que requieran autorización, deben realizarse en presencia del encargado." },
+                                { label: "En devoluciones, el encargado comprueba validez de tickets y estado de prendas." }
+                            ]
+                        }
+                    ],
+                    next: { label: "Siguiente: Apertura y Efectivo", target: "slide-cajas-efectivo-apertura" },
+                    back: "slide-jueves"
+                },
+
+                // 2. APERTURA Y EFECTIVO
+                {
+                    id: "slide-cajas-efectivo-apertura",
+                    type: "content",
+                    day: "CAJAS / EFECTIVO",
+                    title: "TRATAMIENTO DEL EFECTIVO",
+                    icon: "fas fa-coins",
+                    sections: [
+                        {
+                            category: "APERTURA Y CUSTODIA",
+                            items: [
+                                { label: "Solo el cajero y el encargado/responsable pueden estar en el área de caja durante la apertura y cierre." },
+                                { label: "Antes de la apertura comercial, se cuenta el fondo de caja de todos los terminales." },
+                                { label: "Si hay diferencia en el fondo, se graba el efectivo real contado, verificando la diferencia contándolo de nuevo." },
+                                { label: "Todos los billetes recibidos deben ser comprobada su veracidad." }
+                            ]
+                        },
+                        {
+                            category: "MANEJO DE LA CAJA REGISTRADORA",
+                            items: [
+                                { label: "Solo debe guardarse dinero dentro de la caja registradora." },
+                                { label: "El cajón se puede abrir solo en situaciones excepcionales y justificables." },
+                                { label: "Está **prohibido** rechazar la entrega de cambio." },
+                                { label: "Está **prohibido** tener dinero fuera de caja registradora/retardo/fuerte/Tómbola/recicladora." }
+                            ]
+                        },
+                        {
+                            category: "CAJA FUERTE/RETARDO",
+                            items: [
+                                { label: "La caja fuerte/retardo debe permanecer siempre **cerrada** a excepción de los momentos de apertura y cierre." },
+                                { label: "Se deben hacer retiradas de efectivo de los cajones al tener **5000 pesos a partir del fondo**, supervisadas y registradas." },
+                                { label: "Las llaves/códigos deben ser custodiadas por el encargado/responsable, salvo llaves de cajones con solo fondos/tarjetas regalo." },
+                                { label: "Está **prohibido** dar el código a personas no autorizadas." }
+                            ]
+                        }
+                    ],
+                    next: { label: "Siguiente: Cierre y Depósitos", target: "slide-cajas-cierre-depositos" },
+                    back: "slide-cajas-general"
+                },
+
+                // 3. CIERRE Y DEPÓSITOS
+                {
+                    id: "slide-cajas-cierre-depositos",
+                    type: "content",
+                    day: "CAJAS / CIERRE",
+                    title: "OPERATIVA DE CIERRE Y DEPÓSITOS",
+                    icon: "fas fa-money-check-alt",
+                    sections: [
+                        {
+                            category: "CIERRE DE CAJA",
+                            items: [
+                                { label: "Las POS deben quedar **vacías y abiertas** al cierre de tienda." },
+                                { label: "El cierre de cajas (principal y auxiliares) **nunca** puede hacerse con la puerta de la tienda abierta y/o personal ajeno en el establecimiento." },
+                                { label: "El encargado/responsable debe supervisar todo el proceso de cierre y revisar el Informe de Encargado." },
+                                { label: "Es obligatorio contar fondos de caja e ingreso, y el encargado contará el efectivo de la venta de **TODAS** las cajas para verificar coincidencia (PROHIBIDO USAR TABULAR)." }
+                            ]
+                        },
+                        {
+                            category: "PREPARACIÓN DEL DEPÓSITO",
+                            items: [
+                                { label: "El encargado introducirá el dinero en las sacas de seguridad para depositarlas en la caja fuerte/tómbola." },
+                                { label: "El dinero se ingresa a la bolsa de depósito, incluyendo el ingreso a bancos (ficha BBV) que emite la caja." },
+                                { label: "Si se hace más de una bolsa, cada una debe llevar su ticket depósito de ingresos a bancos BBV y su comprobante de servicio." },
+                                { label: "Después de poner el efectivo en la bolsa, presionar para retirar todo el aire y verificar que la cinta de seguridad azul esté en buen estado." }
+                            ]
+                        },
+                        {
+                            category: "ENTREGA DE DEPÓSITOS AL CUSTODIO",
+                            items: [
+                                { label: "El encargado es responsable de entregar depósitos y del control de la llave de la Tómbola." },
+                                { label: "Antes de dar acceso, se pide el gafete y se comprueba en el catálogo de firmas actualizado." },
+                                { label: "La entrega debe hacerse lo más visible a la cámara (CCTV), para cualquier aclaración." },
+                                { label: "Cada depósito se entrega con un comprobante de servicio; el número de segurisello debe coincidir y debe estar **firmado por el custodio** para ser válido." }
+                            ]
+                        }
+                    ],
+                    next: { label: "Volver a Jueves", target: "slide-jueves" },
+                    back: "slide-cajas-efectivo-apertura"
+                },
+
+                // === FIN SUB-FLUJO CAJAS ===
+
+
+                // --- VIERNES ---
+                {
+                    id: "slide-viernes",
+                    type: "content",
+                    day: "05 / VIERNES",
+                    title: "PRÁCTICA",
+                    icon: "fas fa-clipboard-check",
+                    sections: [
+                        {
+                            category: "EJERCICIO PRÁCTICO",
+                            items: [
+                                { label: "Explica situación actual del producto" },
+                                { label: "Análisis familias: positivo/negativo y estrategias" },
+                                { label: "Gestión y conocimiento movimientos tienda" },
+                                { label: "Planificación de novedades" }
+                            ]
+                        }
+                    ],
+                    back: "menu-semanal"
+                }
+            ]
+        };
+
+        /* ==========================================================================
+        RENDERIZADO Y LÓGICA (Declaración de variables y funciones)
+        ==========================================================================
+        */
+
+        const container = document.getElementById('app-container');
+
+        const templates = {
+            
+            // --- SPLASH ---
+            splash: (data) => `
+                <section id="${data.id}" class="slide-container active-slide w-full h-full flex flex-col justify-between p-8 md:p-16 relative overflow-hidden">
+                    <div class="marquee-container top-1/2 -translate-y-1/2 w-full"><div class="marquee-content">${data.marquee} &nbsp; ${data.marquee}</div></div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[40vw] text-white opacity-[0.02] pointer-events-none floating-icon"><i class="${data.icon}"></i></div>
+                    
+                    <div class="z-10 flex justify-between items-start w-full">
+                        <div class="reveal-text delay-1 text-xs font-bold tracking-[0.3em] uppercase border border-white/30 px-3 py-1 text-white/70">Lefties</div>
+                        <div class="reveal-text delay-1 text-xs font-bold tracking-[0.3em] uppercase text-white/50"></div>
+                    </div>
+
+                    <div class="z-10 flex flex-col justify-center items-center flex-grow text-center">
+                        ${data.titleLines.map((line, i) => `<div class="reveal-container"><h1 class="text-[clamp(3.5rem,12vw,9rem)] font-black tracking-tight reveal-text delay-${i+1} mix-blend-difference">${line}</h1></div>`).join('')}
+                    </div>
+
+                    <div class="z-10 flex flex-col items-center gap-8 mb-8">
+                        <div class="reveal-container"><p class="text-gray-400 text-sm md:text-base reveal-text delay-4 uppercase tracking-[0.2em] font-light">${data.subtitle}</p></div>
+                        <div class="reveal-container"><button onclick="transitionTo('${data.action.target}')" class="bg-white text-black border border-white hover:bg-transparent hover:text-white transition-all duration-300 reveal-text delay-4 px-12 py-5 text-sm font-bold tracking-widest uppercase rounded-sm">${data.action.label}</button></div>
+                    </div>
+                </section>
+            `,
+
+            // --- MENU ---
+            menu: (data) => {
+                const listItems = data.options.map((opt, i) => `
+                    <div class="reveal-container w-full">
+                        <button onclick="transitionTo('${opt.target}')" onmouseenter="changeBgIcon('${opt.icon}')" class="menu-item reveal-text w-full text-left py-5 flex items-baseline justify-between group relative" style="transition-delay: ${0.2 + (i * 0.1)}s">
+                            <div class="flex items-center gap-6 md:gap-10">
+                                <span class="text-xs text-gray-600 font-mono">0${i+1}</span>
+                                <span class="text-[clamp(2rem,5vw,4rem)] leading-none font-display font-bold text-gray-300 group-hover:text-white transition-colors">${opt.label}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="hidden md:block text-xs uppercase tracking-[0.2em] text-gray-600 group-hover:text-white transition-colors">${opt.sub}</span>
+                                <i class="fas fa-arrow-right text-white opacity-0 item-arrow transition-all"></i>
+                            </div>
+                        </button>
+                    </div>
+                `).join('');
+
+                return `
+                <section id="${data.id}" class="slide-container w-full h-full flex flex-col p-8 md:p-16">
+                    <div class="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none z-0">
+                        <i id="bg-icon-display" class="${data.options[0].icon} text-[50vw] text-white opacity-[0.03] transition-all duration-500 transform scale-110"></i>
+                    </div>
+                    <div class="z-10 h-full flex flex-col justify-center max-w-6xl mx-auto w-full">
+                        <div class="reveal-container mb-8"><h2 class="text-xs uppercase tracking-[0.4em] text-gray-500 border-l border-white/20 pl-4 reveal-text delay-1">${data.title}</h2></div>
+                        <div class="flex flex-col w-full border-t border-white/10 overflow-y-auto pr-4 max-h-[70vh]">${listItems}</div>
+                        <div class="mt-8 reveal-container"><button onclick="transitionTo('${data.backAction.target}')" class="reveal-text delay-4 text-xs uppercase tracking-widest text-gray-500 hover:text-white transition-colors flex items-center gap-2"><i class="fas fa-arrow-left"></i> ${data.backAction.label}</button></div>
+                    </div>
+                </section>
+                `;
+            },
+
+            // --- CONTENT (MULTI-SECTION) ---
+            content: (data) => {
+                const renderItems = (items) => items.map(item => `
+                    <button onclick="${item.target ? `transitionTo('${item.target}')` : ''}" class="task-btn w-full p-4 mb-2 flex items-center justify-between group cursor-${item.target ? 'pointer' : 'default'}">
+                        <span class="text-sm font-medium tracking-wide text-gray-300 group-hover:text-black uppercase">${item.label}</span>
+                        ${item.target || item.special ? '<i class="fas fa-chevron-right text-black icon-arrow"></i>' : ''}
+                    </button>
+                `).join('');
+
+                const renderSections = data.sections.map((sec, i) => `
+                     <div class="mb-8 reveal-container">
+                        <h3 class="reveal-text delay-${i+1} text-xs font-bold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-2">${sec.category}</h3>
+                        <div class="reveal-text delay-${i+2}">
+                            ${renderItems(sec.items)}
+                        </div>
+                     </div>
+                `).join('');
+
+                return `
+                <section id="${data.id}" class="slide-container w-full h-full flex flex-col md:flex-row bg-[#080808]">
+                    <div class="w-full md:w-4/12 h-48 md:h-full relative flex items-center justify-center bg-[#0f0f0f] border-r border-white/5 overflow-hidden">
+                        <div class="floating-icon relative z-10"><i class="${data.icon} text-[8rem] md:text-[15vw] text-white opacity-90"></i></div>
+                        <div class="absolute top-8 left-8 z-20"><div class="text-white text-xs font-bold uppercase tracking-[0.2em] border border-white/20 px-3 py-1">${data.day}</div></div>
+                    </div>
+                    <div class="w-full md:w-8/12 h-full p-8 md:p-16 flex flex-col relative overflow-y-auto">
+                        <button onclick="transitionTo('${data.back}')" class="sticky top-0 self-end w-10 h-10 flex items-center justify-center text-gray-500 hover:text-white transition-colors border border-transparent hover:border-white/20 rounded-full mb-4 z-50 bg-[#080808]">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div class="reveal-container mb-8"><h2 class="reveal-text delay-1 text-[clamp(2.5rem,5vw,4rem)] font-black uppercase leading-none text-white">${data.title}</h2></div>
+                        <div class="w-full max-w-3xl pb-20">
+                            ${renderSections}
+                            ${data.next ? `
+                            <div class="mt-8 pt-8 border-t border-white/10 reveal-text delay-4">
+                                <button onclick="transitionTo('${data.next.target}')" class="px-8 py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-300 transition-colors w-full md:w-auto">
+                                    ${data.next.label} <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                </section>
+                `;
+            },
+
+            // --- TABLAS ---
+            tables: (data) => `
+                <section id="${data.id}" class="slide-container w-full h-full flex flex-col p-8 md:p-12 bg-[#050505] overflow-y-auto">
+                    <div class="max-w-6xl mx-auto w-full">
+                        <div class="flex justify-between items-center mb-12 border-b border-white/20 pb-6">
+                            <div>
+                                <h2 class="text-3xl md:text-5xl font-black uppercase mb-2">${data.title}</h2>
+                                <p class="text-gray-400 uppercase tracking-widest text-sm">${data.subtitle}</p>
+                            </div>
+                            <button onclick="transitionTo('${data.back}')" class="px-6 py-3 border border-white hover:bg-white hover:text-black transition-colors uppercase text-xs font-bold tracking-widest">
+                                Volver <i class="fas fa-arrow-up rotate-45 ml-2"></i>
+                            </button>
+                        </div>
+                        <div class="mb-12 reveal-text delay-1">
+                            <h3 class="text-xl font-bold mb-4 text-white border-l-4 border-white pl-3">NIÑA Y NIÑO (2 - 14 AÑOS)</h3>
+                            <div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Talla (Mex)</th><th>Euro (Prendas Altas)</th><th>Euro (Prendas Bajas)</th><th>Calzado</th></tr></thead><tbody><tr><td>24</td><td>2-3</td><td>2-3</td><td>15 1/2</td></tr><tr><td>25</td><td>3-4</td><td>3-4</td><td>16</td></tr><tr><td>26</td><td>4-5</td><td>4-5</td><td>17</td></tr><tr><td>27</td><td>5-6</td><td>5-6</td><td>17 1/2</td></tr><tr><td>28</td><td>7-8</td><td>7-8</td><td>18</td></tr><tr><td>29</td><td>9-10</td><td>9-10</td><td>19</td></tr><tr><td>30</td><td>11-12</td><td>11-12</td><td>19 1/2</td></tr><tr><td>31</td><td>13-14</td><td>13-14</td><td>20</td></tr></tbody></table></div>
+                        </div>
+                        <div class="mb-12 reveal-text delay-2">
+                            <h3 class="text-xl font-bold mb-4 text-white border-l-4 border-white pl-3">BEBÉ (0 - 24 MESES)</h3>
+                            <div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Meses (Mex)</th><th>Euro (Altas)</th><th>Euro (Bajas)</th><th>Calzado</th></tr></thead><tbody><tr><td>17</td><td>0-3</td><td>0-3</td><td>11</td></tr><tr><td>18</td><td>3-6</td><td>3-6</td><td>11 1/2</td></tr><tr><td>19</td><td>6-9</td><td>6-9</td><td>12</td></tr><tr><td>20</td><td>9-12</td><td>9-12</td><td>13</td></tr></tbody></table></div>
+                        </div>
+                    </div>
+                </section>
+            `
+        };
+
+        // LÓGICA (Funciones)
+
+        function init() {
+            let html = '';
+            appConfig.slides.forEach(slide => {
+                if (templates[slide.type]) {
+                    html += templates[slide.type](slide);
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        let isTransitioning = false;
+        window.transitionTo = function(targetId) {
+            if(isTransitioning) return;
+            const current = document.querySelector('.active-slide');
+            const next = document.getElementById(targetId);
+            if(!next || current === next) return;
+
+            isTransitioning = true;
+            current.classList.remove('active-slide');
+            setTimeout(() => next.classList.add('active-slide'), 50);
+            setTimeout(() => isTransitioning = false, 800);
+        };
+
+        window.changeBgIcon = function(iconClass) {
+            const iconEl = document.getElementById('bg-icon-display');
+            if(iconEl) {
+                iconEl.style.opacity = '0';
+                iconEl.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    iconEl.className = `${iconClass} text-[50vw] text-white opacity-[0.03] transition-all duration-500 transform scale-110`;
+                    iconEl.style.opacity = '0.03';
+                }, 200);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
