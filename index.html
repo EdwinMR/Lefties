@@ -135,9 +135,9 @@
                     type: "splash",
                     marquee: "TRAINING • FORMACIÓN • RETAIL • MANAGEMENT •",
                     titleLines: ["LEFTIES", "FORMACIÓN", "RESPONSABLES"],
-                    subtitle: "",
+                    subtitle: "PROGRAMA DE CAPACITACIÓN INTERNA 2025",
                     icon: "fas fa-infinity",
-                    action: { label: "BIENVENIDOS", target: "menu-semanal" }
+                    action: { label: "INICIAR SESIÓN", target: "menu-semanal" }
                 },
 
                 // --- MENU ---
@@ -296,6 +296,10 @@
                     day: "APP DOOR CONTROL",
                     title: "ESCANEO DE TICKET",
                     icon: "fas fa-ticket-alt",
+                    media: [
+                        { "caption": "App Door Control: Escaneo de Ticket (p. 2)" },
+                        { "caption": "App Door Control: Histórico y Detalle (p. 3)" }
+                    ],
                     sections: [
                         {
                             category: "FUNCIÓN PRINCIPAL",
@@ -330,6 +334,10 @@
                     day: "APP CM MERMA",
                     title: "INDICADORES DE MERMA",
                     icon: "fas fa-chart-bar",
+                    media: [
+                        { "caption": "CM Merma: Evidencias por Zona y Hora (p. 3)" },
+                        { "caption": "CM Merma: Indicadores de Procesos (p. 5)" }
+                    ],
                     sections: [
                         {
                             category: "EVIDENCIAS - POR ZONA",
@@ -404,6 +412,11 @@
                     day: "MERCHANDISING / MOBILIARIO",
                     title: "TIPOS DE MUEBLE VERSÁTIL",
                     icon: "fas fa-warehouse",
+                    media: [
+                        { "caption": "Muebles Versátil Señora/Caballero (p. 3)" },
+                        { "caption": "Muebles Versátil Niñ@ (p. 4)" },
+                        { "caption": "Muebles Versátil Baby (p. 5)" }
+                    ],
                     sections: [
                         {
                             category: "MUELBE VERSÁTIL - SEÑORA Y CABALLERO (60 cm)",
@@ -480,6 +493,12 @@
                     day: "APP ONE STORE",
                     title: "NOVEDADES DE LA APP",
                     icon: "fas fa-mobile-alt",
+                    media: [
+                        { "caption": "App ONE STORE: Cambio de Logo (p. 2)" },
+                        { "caption": "App ONE STORE: Pestaña Comercial (p. 3)" },
+                        { "caption": "App ONE STORE: Pestaña Operaciones (p. 4)" },
+                        { "caption": "App ONE STORE: Detalle de Artículo (p. 6)" }
+                    ],
                     sections: [
                         {
                             category: "CAMBIOS GENERALES",
@@ -557,6 +576,10 @@
                     day: "CAJAS / NORMATIVA",
                     title: "NORMATIVA DE SEGURIDAD EN CAJA",
                     icon: "fas fa-lock",
+                    media: [
+                        { "caption": "Gráfico: Operativa No Permitida (p. 3)" },
+                        { "caption": "Gráfico: Operativa No Permitida (p. 4)" }
+                    ],
                     sections: [
                         {
                             category: "IDENTIFICACIÓN DEL EMPLEADO",
@@ -598,6 +621,9 @@
                     day: "CAJAS / EFECTIVO",
                     title: "TRATAMIENTO DEL EFECTIVO",
                     icon: "fas fa-coins",
+                    media: [
+                        { "caption": "Ilustración de Caja Fuerte/Retardo (p. 6)" }
+                    ],
                     sections: [
                         {
                             category: "APERTURA Y CUSTODIA",
@@ -638,6 +664,9 @@
                     day: "CAJAS / CIERRE",
                     title: "OPERATIVA DE CIERRE Y DEPÓSITOS",
                     icon: "fas fa-money-check-alt",
+                    media: [
+                        { "caption": "Gráfico: Preparación del Depósito (p. 8)" }
+                    ],
                     sections: [
                         {
                             category: "CIERRE DE CAJA",
@@ -714,7 +743,7 @@
                     
                     <div class="z-10 flex justify-between items-start w-full">
                         <div class="reveal-text delay-1 text-xs font-bold tracking-[0.3em] uppercase border border-white/30 px-3 py-1 text-white/70">Lefties</div>
-                        <div class="reveal-text delay-1 text-xs font-bold tracking-[0.3em] uppercase text-white/50"></div>
+                        <div class="reveal-text delay-1 text-xs font-bold tracking-[0.3em] uppercase text-white/50">V 4.1</div>
                     </div>
 
                     <div class="z-10 flex flex-col justify-center items-center flex-grow text-center">
@@ -767,6 +796,22 @@
                         ${item.target || item.special ? '<i class="fas fa-chevron-right text-black icon-arrow"></i>' : ''}
                     </button>
                 `).join('');
+                
+                const renderMedia = (media) => {
+                    if (!media || media.length === 0) return '';
+                    return `
+                        <div class="mb-8 pt-4 reveal-text delay-1 border-b border-gray-800">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">REFERENCIAS VISUALES</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                                ${media.map(item => `
+                                    <div class="bg-gray-900 p-4 rounded-lg text-center border border-gray-700 shadow-xl flex items-center justify-center h-24">
+                                        <p class="text-xs text-gray-300 font-bold">${item.caption}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                };
 
                 const renderSections = data.sections.map((sec, i) => `
                      <div class="mb-8 reveal-container">
@@ -789,6 +834,7 @@
                         </button>
                         <div class="reveal-container mb-8"><h2 class="reveal-text delay-1 text-[clamp(2.5rem,5vw,4rem)] font-black uppercase leading-none text-white">${data.title}</h2></div>
                         <div class="w-full max-w-3xl pb-20">
+                            ${renderMedia(data.media)}
                             ${renderSections}
                             ${data.next ? `
                             <div class="mt-8 pt-8 border-t border-white/10 reveal-text delay-4">
